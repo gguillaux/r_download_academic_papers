@@ -3,15 +3,15 @@ library(rcoreoa)
 library(RCurl)
 
 # keys
-CORE_KEY      <- "dBD1teHoYyjV6FsGQuJhC2wTAbm7L0lr"
+CORE_KEY      <- "dBD1teHoYyjV6FsGQuJhC2wTAbm7L0lrP"
 IBM_DISC_KEY  <- ""
 
 # frames
-QUERY    <- data.frame("all_of_the_words" = "quantitative finance",
+QUERY    <- data.frame("all_of_the_words" = "algorithmic trading",
                        "find_those_words" = "b",       # fetch in titles
                        "language" = "en",
                        "year_from" = 2017,
-                       "year_to" = 2019)
+                       "year_to" = 2020)
 
 RES      <-  data.frame(ID            = character(),
                         Author_1st    = as.character(),
@@ -29,6 +29,7 @@ total_pages <- round(
                       $totalHits / 100
                       )
 total_pages <- 8
+
 for (pp in 1:total_pages){
   res <- rcoreoa::core_advanced_search(query = QUERY, 
                                        key = CORE_KEY,
@@ -50,19 +51,10 @@ who <- which(RES$Download_link != "" & RES$Description != "")
 RES <- RES[who,]
 
 
-write.csv2(RES,"c:/dev/r/quantitative_finance.csv", row.names = FALSE)
-RES = read.csv2("c:/dev/r/quantitative_finance.csv")
+# save auxiliar csv
+write.csv2(RES,"c:/dev/algo_trading.csv", row.names = FALSE)
+RES = read.csv2("c:/dev/algo_trading.csv")
 
-get_pdf_name <- function(x) {
-  path <- "C:/dev/r/articles"
-  return ( file.path(path, 
-                     paste(x$Author_1st,
-                           " (",
-                           x$Year,
-                           ") ",
-                           x$Title,
-                           ".pdf", sep="")))
-}
 
 download.file(
   url = as.vector(RES$Download_link),
@@ -71,22 +63,21 @@ download.file(
 )
 
 for (i in 1:nrow(RES)){
-  my_destfile <- paste("C:/dev/r/articles/",
-                        RES$Author_1st[i],
-                        " (",
+  my_destfile <- paste("C:/dev/articles/",
                         RES$Year[i],
-                        ") ",
+                        " ",
+                        RES$ID[i],
+                        " ", 
                         RES$Title[i],
                         ".pdf", sep="")
   
   my_url <-  as.character(RES$Download_link[i])
-  print(my_url)
+  print(c(my_url, my_destfile))
   
-  tryCatch()
-  if (url.exists(my_url)){
-    download.file(url = my_url, 
-                  destfile = my_destfile,
-                  mode = "wb") 
-  }
-}
+  tryCatch(download.file(url = my_url, 
+                         destfile = my_destfile,
+                         mode = "wb"), 
+           error = function(e) e, 
+           finally = print("Downloaded "))
 
+}
